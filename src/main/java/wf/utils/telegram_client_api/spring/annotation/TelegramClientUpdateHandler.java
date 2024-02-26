@@ -8,7 +8,7 @@ import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 public @interface TelegramClientUpdateHandler {
 
-    Class<? extends TdApi.Update> updateType();
+    Class<? extends TdApi.Update> updateType() default TdApi.Update.class;
 
 
 }

@@ -152,22 +152,7 @@ public class TelegramClient {
     }
 
     private void loadMe() {
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<Result<TdApi.User>> userResultRef = new AtomicReference<>();
-
-        this.client.send(new TdApi.GetMe(), result -> {
-            userResultRef.set(result);
-            latch.countDown();
-        });
-
-        try { latch.await(); }
-        catch (InterruptedException e) { throw new RuntimeException("Failed to get user information", e); }
-
-        Result<TdApi.User> userResult = userResultRef.get();
-        if (userResult.isError())
-            throw new TelegramClientRequestException(userResult.getError().message);
-
-        this.me = userResult.get();
+        this.me = clientExecutor.send(new TdApi.GetMe());
     }
 
     public boolean isLoggedIn() {

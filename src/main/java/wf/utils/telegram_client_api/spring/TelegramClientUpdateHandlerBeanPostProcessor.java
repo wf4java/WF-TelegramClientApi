@@ -54,11 +54,9 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
             @Override
             public void onUpdate(TdApi.Update update, ClientExecutor clientExecutor) {
                 for(UpdateHandler updateHandler : updateHandlers) {
-                    if(updateHandler.getUpdateType()
-                            != null && ConstructorDetector.getConstructor(updateHandler.getUpdateType()) != update.getConstructor()) return;
+                    if(!updateHandler.getUpdateType().equals(TdApi.Update.class) && ConstructorDetector.getConstructor(updateHandler.getUpdateType()) != update.getConstructor()) return;
 
-                    invoke(updateHandler.getHandledMethod(), updateHandler.getUpdateType() != null ?
-                            updateHandler.getUpdateType().cast(update) : update);
+                    invoke(updateHandler.getHandledMethod(), updateHandler.getUpdateType().cast(update), clientExecutor);
                 }
             }
         });
