@@ -24,6 +24,7 @@ public class Main {
         telegramClient.addMessageHandler(new MessageHandler() {
             @Override
             public void onTextMessage(String text, Long chatId, TdApi.Message message, ClientExecutor clientExecutor, Boolean itsMe, TdApi.UpdateNewMessage update) {
+
                 if(!itsMe) return;
                 clientExecutor.deleteMessage(chatId, message.id);
             }

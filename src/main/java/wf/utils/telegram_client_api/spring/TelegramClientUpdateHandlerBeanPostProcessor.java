@@ -80,7 +80,7 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
                             method.getAnnotation(TelegramClientMessageHandler.class).selectorType()));
 
                 if (method.isAnnotationPresent(TelegramClientTextMessageHandler.class))
-                    messageHandlers.add(new MessageHandler(new HandledMethod(bean, method),
+                    textMessageHandlers.add(new MessageHandler(new HandledMethod(bean, method),
                             method.getAnnotation(TelegramClientTextMessageHandler.class).selectorType()));
             }
         }
