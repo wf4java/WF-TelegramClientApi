@@ -4,6 +4,7 @@ telegram-data/
 !**/src/main/**/target/
 !**/src/test/**/target/
 /src/test/java/Test.java
+.cache
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

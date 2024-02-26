@@ -6,6 +6,7 @@ import it.tdlight.client.SimpleTelegramClient;
 import it.tdlight.jni.TdApi;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import wf.utils.telegram_client_api.TelegramClient;
 import wf.utils.telegram_client_api.models.exception.TelegramClientRequestException;
 
@@ -18,6 +19,96 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ClientExecutor {
 
     private final TelegramClient telegramClient;
+
+
+
+
+
+    public TdApi.Message sendMessage(Long chatId, String text) {
+        TdApi.SendMessage message = new TdApi.SendMessage();
+        message.chatId = chatId;
+        message.inputMessageContent = inputMessageTextFromText(text);
+        return send(message);
+    }
+
+    @SneakyThrows
+    public CompletableFuture<TdApi.Message> sendMessageAsync(Long chatId, String text) {
+        TdApi.SendMessage message = new TdApi.SendMessage();
+        message.chatId = chatId;
+        message.inputMessageContent = inputMessageTextFromText(text);
+        return sendAsync(message);
+    }
+
+    @SneakyThrows
+    public TdApi.Message sendMessageReply(Long chatId, long replyId, String text) {
+        TdApi.SendMessage message = new TdApi.SendMessage();
+        message.chatId = chatId;
+        message.replyToMessageId = replyId;
+        message.inputMessageContent = inputMessageTextFromText(text);
+        return send(message);
+    }
+
+    @SneakyThrows
+    public CompletableFuture<TdApi.Message> sendMessageReplyAsync(Long chatId, long replyId, String text) {
+        TdApi.SendMessage message = new TdApi.SendMessage();
+        message.chatId = chatId;
+        message.replyToMessageId = replyId;
+        message.inputMessageContent = inputMessageTextFromText(text);
+        return sendAsync(message);
+    }
+
+    @SneakyThrows
+    public TdApi.Message editMessageText(Long chatId, long messageId, String newText) {
+        TdApi.EditMessageText editMessage = new TdApi.EditMessageText();
+        editMessage.chatId = chatId;
+        editMessage.messageId = messageId;
+        editMessage.inputMessageContent = inputMessageTextFromText(newText);
+        return send(editMessage);
+    }
+
+    @SneakyThrows
+    public CompletableFuture<TdApi.Message> editMessageTextAsync(Long chatId, long messageId, String newText) {
+        TdApi.EditMessageText editMessage = new TdApi.EditMessageText();
+        editMessage.chatId = chatId;
+        editMessage.messageId = messageId;
+        editMessage.inputMessageContent = inputMessageTextFromText(newText);
+        return sendAsync(editMessage);
+    }
+
+    @SneakyThrows
+    public void deleteMessage(Long chatId, long messageId) {
+        TdApi.DeleteMessages deleteMessages = new TdApi.DeleteMessages();
+        deleteMessages.chatId = chatId;
+        deleteMessages.messageIds = new long[]{messageId};
+        sendForOk(deleteMessages);
+    }
+
+    @SneakyThrows
+    public void deleteMessageAsync(Long chatId, long messageId) {
+        TdApi.DeleteMessages deleteMessages = new TdApi.DeleteMessages();
+        deleteMessages.chatId = chatId;
+        deleteMessages.messageIds = new long[]{messageId};
+        sendForOk(deleteMessages);
+    }
+
+
+    @SneakyThrows
+    public TdApi.Message forwardMessage(Long chatId, Long fromChatId, long messageId) {
+        TdApi.ForwardMessages forwardMessage = new TdApi.ForwardMessages();
+        forwardMessage.chatId = chatId;
+        forwardMessage.fromChatId = fromChatId;
+        forwardMessage.messageIds = new long[]{messageId};
+        return send(forwardMessage).messages[0];
+    }
+
+    @SneakyThrows
+    public CompletableFuture<TdApi.Messages> forwardMessageAsync(Long chatId, Long fromChatId, long messageId) {
+        TdApi.ForwardMessages forwardMessage = new TdApi.ForwardMessages();
+        forwardMessage.chatId = chatId;
+        forwardMessage.fromChatId = fromChatId;
+        forwardMessage.messageIds = new long[]{messageId};
+        return sendAsync(forwardMessage);
+    }
 
 
 
@@ -36,18 +127,21 @@ public class ClientExecutor {
         return future;
     }
 
+    public void sendForOk(TdApi.Function<TdApi.Ok> function) {
+        send(function, result -> { });
+    }
 
     public <R extends TdApi.Object> R send(TdApi.Function<R> function) {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Result<R>> userResultRef = new AtomicReference<>();
 
         send(function, result -> {
-            userResultRef.set(result);
-            latch.countDown();
+            try { userResultRef.set(result);}
+            finally { latch.countDown(); }
         });
 
         try { latch.await(); }
-        catch (InterruptedException e) { throw new RuntimeException(e); }
+        catch (InterruptedException e) { e.printStackTrace(); throw new RuntimeException(e); }
 
         Result<R> result = userResultRef.get();
         if (result.isError())
@@ -82,6 +176,10 @@ public class ClientExecutor {
 
     public static long getSenderId(TdApi.MessageSender sender) {
         return TelegramClient.getSenderId(sender);
+    }
+
+    public static TdApi.InputMessageText inputMessageTextFromText(String text) {
+        return TelegramClient.inputMessageTextFromText(text);
     }
 
     public SimpleTelegramClient getClient() {

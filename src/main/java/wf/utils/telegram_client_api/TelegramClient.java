@@ -64,6 +64,7 @@ public class TelegramClient {
 
         this.client.addUpdateHandler(TdApi.UpdateAuthorizationState.class, this::onUpdateAuthorizationState);
         this.client.addUpdatesHandler(this::onUpdate);
+        this.client.addDefaultExceptionHandler(this::onException);
 
         this.client.start(authenticationData);
 
@@ -105,6 +106,10 @@ public class TelegramClient {
     }
 
 
+    public void onException(Throwable throwable) {
+        log.error("Exception occurred in Telegram client", throwable);
+    }
+
     public void onUpdate(TdApi.Update update) {
         for (MessageHandler messageHandler : messageHandlers)
             messageHandler.onUpdate(update, clientExecutor);
@@ -112,11 +117,11 @@ public class TelegramClient {
         if(update instanceof TdApi.UpdateNewMessage updateNewMessage) {
             TdApi.Message message = updateNewMessage.message;
             for (MessageHandler messageHandler : messageHandlers)
-                messageHandler.onMessage(message.chatId, message, clientExecutor, itsMe(message.senderId), update);
+                messageHandler.onMessage(message.chatId, message, clientExecutor, itsMe(message.senderId), (TdApi.UpdateNewMessage) update);
 
             if(message.content instanceof TdApi.MessageText messageText)
                 for (MessageHandler messageHandler : messageHandlers)
-                    messageHandler.onTextMessage(messageText.text.text, message.chatId, message, clientExecutor, itsMe(message.senderId), update);
+                    messageHandler.onTextMessage(messageText.text.text, message.chatId, message, clientExecutor, itsMe(message.senderId), (TdApi.UpdateNewMessage) update);
         }
     }
 
@@ -196,6 +201,10 @@ public class TelegramClient {
             return chat.chatId;
         }
         return 0;
+    }
+
+    public static TdApi.InputMessageText inputMessageTextFromText(String text) {
+        return new TdApi.InputMessageText(new TdApi.FormattedText(text, new TdApi.TextEntity[0]), false, false);
     }
 
 }
