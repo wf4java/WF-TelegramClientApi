@@ -9,7 +9,8 @@
   </dependency>
 ```
 
-## Get apiId: https://core.telegram.org/api/obtaining_api_id
+## Get telegram api id: 
+https://core.telegram.org/api/obtaining_api_id
 
 ## Example:
 
