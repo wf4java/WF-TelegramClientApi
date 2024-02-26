@@ -1,8 +1,9 @@
 target/
+telegram-data/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-src/test/java/Test.java
+/src/test/java/Test.java
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
