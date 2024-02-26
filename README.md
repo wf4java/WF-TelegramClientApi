@@ -1,4 +1,4 @@
-# WF-ChatGptApi:
+# WF-TelegramClientApi:
 ## Maven:
 `Java(min): 18`
 ```xml
