@@ -18,8 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -29,6 +28,8 @@ public class TelegramClient {
 
     @Getter(AccessLevel.NONE)
     private final CountDownLatch authWaitLatch;
+    @Getter(AccessLevel.NONE)
+    private final ExecutorService executorService;
 
     private final SimpleTelegramClient client;
     private final ClientExecutor clientExecutor;
@@ -61,6 +62,7 @@ public class TelegramClient {
         this.client = new SimpleTelegramClient(settings);
         this.messageHandlers = new CopyOnWriteArrayList<>();
         this.clientExecutor = new ClientExecutor(this);
+        this.executorService = new ThreadPoolExecutor(3, 25, 120, TimeUnit.SECONDS, new SynchronousQueue<>());
 
         this.client.addUpdateHandler(TdApi.UpdateAuthorizationState.class, this::onUpdateAuthorizationState);
         this.client.addUpdatesHandler(this::onUpdate);
@@ -80,49 +82,33 @@ public class TelegramClient {
 
 
 
-    public <T extends TdApi.Update> void addCommandHandler(String commandName, CommandHandler handler) {
-        this.client.addCommandHandler(commandName, handler);
-    }
 
     public void addMessageHandler(MessageHandler messageHandler) {
         this.messageHandlers.add(messageHandler);
     }
 
-    public <T extends TdApi.Update> void addUpdateHandler(Class<T> updateType, GenericUpdateHandler<T> handler) {
-        this.client.addUpdateHandler(updateType, handler);
-    }
 
 
-    public void addUpdatesHandler(GenericUpdateHandler<TdApi.Update> handler) {
-        this.client.addUpdatesHandler(handler);
-    }
 
-    public void addUpdateExceptionHandler(ExceptionHandler updateExceptionHandler) {
-        this. client.addUpdateExceptionHandler(updateExceptionHandler);
-    }
-
-    public void addDefaultExceptionHandler(ExceptionHandler defaultExceptionHandlers) {
-        this.client.addDefaultExceptionHandler(defaultExceptionHandlers);
-    }
-
-
-    public void onException(Throwable throwable) {
+    private void onException(Throwable throwable) {
         log.error("Exception occurred in Telegram client", throwable);
     }
 
-    public void onUpdate(TdApi.Update update) {
-        for (MessageHandler messageHandler : messageHandlers)
-            messageHandler.onUpdate(update, clientExecutor);
-
-        if(update instanceof TdApi.UpdateNewMessage updateNewMessage) {
-            TdApi.Message message = updateNewMessage.message;
+    private void onUpdate(TdApi.Update update) {
+        executorService.submit(() -> {
             for (MessageHandler messageHandler : messageHandlers)
-                messageHandler.onMessage(message.chatId, message, clientExecutor, itsMe(message.senderId), (TdApi.UpdateNewMessage) update);
+                messageHandler.onUpdate(update, clientExecutor);
 
-            if(message.content instanceof TdApi.MessageText messageText)
+            if(update instanceof TdApi.UpdateNewMessage updateNewMessage) {
+                TdApi.Message message = updateNewMessage.message;
                 for (MessageHandler messageHandler : messageHandlers)
-                    messageHandler.onTextMessage(messageText.text.text, message.chatId, message, clientExecutor, itsMe(message.senderId), (TdApi.UpdateNewMessage) update);
-        }
+                    messageHandler.onMessage(message.chatId, message, clientExecutor, itsMe(message.senderId), (TdApi.UpdateNewMessage) update);
+
+                if(message.content instanceof TdApi.MessageText messageText)
+                    for (MessageHandler messageHandler : messageHandlers)
+                        messageHandler.onTextMessage(messageText.text.text, message.chatId, message, clientExecutor, itsMe(message.senderId), (TdApi.UpdateNewMessage) update);
+            }
+        });
     }
 
 

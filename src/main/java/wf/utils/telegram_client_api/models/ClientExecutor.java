@@ -10,8 +10,7 @@ import lombok.SneakyThrows;
 import wf.utils.telegram_client_api.TelegramClient;
 import wf.utils.telegram_client_api.models.exception.TelegramClientRequestException;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Getter
@@ -76,19 +75,19 @@ public class ClientExecutor {
     }
 
     @SneakyThrows
-    public void deleteMessage(Long chatId, long messageId) {
+    public TdApi.Ok deleteMessage(Long chatId, long messageId) {
         TdApi.DeleteMessages deleteMessages = new TdApi.DeleteMessages();
         deleteMessages.chatId = chatId;
         deleteMessages.messageIds = new long[]{messageId};
-        sendForOk(deleteMessages);
+        return send(deleteMessages);
     }
 
     @SneakyThrows
-    public void deleteMessageAsync(Long chatId, long messageId) {
+    public CompletableFuture<TdApi.Ok> deleteMessageAsync(Long chatId, long messageId) {
         TdApi.DeleteMessages deleteMessages = new TdApi.DeleteMessages();
         deleteMessages.chatId = chatId;
         deleteMessages.messageIds = new long[]{messageId};
-        sendForOk(deleteMessages);
+        return sendAsync(deleteMessages);
     }
 
 
@@ -127,27 +126,10 @@ public class ClientExecutor {
         return future;
     }
 
-    public void sendForOk(TdApi.Function<TdApi.Ok> function) {
-        send(function, result -> { });
-    }
+
 
     public <R extends TdApi.Object> R send(TdApi.Function<R> function) {
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<Result<R>> userResultRef = new AtomicReference<>();
-
-        send(function, result -> {
-            try { userResultRef.set(result);}
-            finally { latch.countDown(); }
-        });
-
-        try { latch.await(); }
-        catch (InterruptedException e) { e.printStackTrace(); throw new RuntimeException(e); }
-
-        Result<R> result = userResultRef.get();
-        if (result.isError())
-            throw new TelegramClientRequestException(result.getError().message);
-
-        return result.get();
+        return sendAsync(function).join();
     }
 
 
