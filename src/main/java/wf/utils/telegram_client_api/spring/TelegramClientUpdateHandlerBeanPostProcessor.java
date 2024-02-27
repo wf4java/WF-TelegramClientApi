@@ -34,8 +34,8 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
             @Override
             public void onTextMessage(String text, Long chatId, TdApi.Message message, ClientExecutor clientExecutor, Boolean itsMe, TdApi.UpdateNewMessage update) {
                 for(MessageHandler messageHandler : textMessageHandlers) {
-                    if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_NOT_MY && itsMe) return;
-                    if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_MY && !itsMe) return;
+                    if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_NOT_MY && itsMe) continue;
+                    if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_MY && !itsMe) continue;
 
                     invoke(messageHandler.getHandledMethod(), text, chatId, message, clientExecutor, itsMe, update);
                 }
@@ -44,8 +44,8 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
             @Override
             public void onMessage(Long chatId, TdApi.Message message, ClientExecutor clientExecutor, Boolean itsMe, TdApi.UpdateNewMessage update) {
                 for(MessageHandler messageHandler : messageHandlers) {
-                    if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_NOT_MY && itsMe) return;
-                    if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_MY && !itsMe) return;
+                    if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_NOT_MY && itsMe) continue;
+                    if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_MY && !itsMe) continue;
 
                     invoke(messageHandler.getHandledMethod(), chatId, message, clientExecutor, itsMe, update);
                 }
@@ -54,7 +54,8 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
             @Override
             public void onUpdate(TdApi.Update update, ClientExecutor clientExecutor) {
                 for(UpdateHandler updateHandler : updateHandlers) {
-                    if(!updateHandler.getUpdateType().equals(TdApi.Update.class) && ConstructorDetector.getConstructor(updateHandler.getUpdateType()) != update.getConstructor()) return;
+                    if(!updateHandler.getUpdateType().equals(TdApi.Update.class) &&
+                            ConstructorDetector.getConstructor(updateHandler.getUpdateType()) != update.getConstructor()) continue;
 
                     invoke(updateHandler.getHandledMethod(), updateHandler.getUpdateType().cast(update), clientExecutor);
                 }
