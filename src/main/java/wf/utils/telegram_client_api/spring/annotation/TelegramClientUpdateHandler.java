@@ -4,6 +4,9 @@ import it.tdlight.jni.TdApi;
 
 import java.lang.annotation.*;
 
+/**
+ (TdApi.Update update, ClientExecutor clientExecutor)
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface TelegramClientUpdateHandler {
