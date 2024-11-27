@@ -102,11 +102,11 @@ public class TelegramClient {
             if(update instanceof TdApi.UpdateNewMessage updateNewMessage) {
                 TdApi.Message message = updateNewMessage.message;
                 for (MessageHandler messageHandler : messageHandlers)
-                    messageHandler.onMessage(message.chatId, message, clientExecutor, itsMe(message.senderId), (TdApi.UpdateNewMessage) update);
+                    messageHandler.onMessage(message.chatId, message, itsMe(message.senderId), (TdApi.UpdateNewMessage) update, clientExecutor);
 
                 if(message.content instanceof TdApi.MessageText messageText)
                     for (MessageHandler messageHandler : messageHandlers)
-                        messageHandler.onTextMessage(messageText.text.text, message.chatId, message, clientExecutor, itsMe(message.senderId), (TdApi.UpdateNewMessage) update);
+                        messageHandler.onTextMessage(messageText.text.text, message.chatId, message, itsMe(message.senderId), (TdApi.UpdateNewMessage) update, clientExecutor);
             }
         });
     }

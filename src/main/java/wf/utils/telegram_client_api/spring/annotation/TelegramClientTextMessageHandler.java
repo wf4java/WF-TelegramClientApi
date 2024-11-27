@@ -7,7 +7,7 @@ import java.lang.annotation.*;
 
 
 /**
- (String text, long chatId, TdApi.Message message, boolean itsMe, TdApi.UpdateNewMessage update, ClientExecutor clientExecutor)
+ (String text, Long chatId, TdApi.Message message, Boolean itsMe, TdApi.UpdateNewMessage update, ClientExecutor clientExecutor)
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

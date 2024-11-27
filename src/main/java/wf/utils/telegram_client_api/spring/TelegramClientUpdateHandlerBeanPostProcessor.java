@@ -32,7 +32,7 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
         this.telegramClient = telegramClient;
         telegramClient.addMessageHandler(new wf.utils.telegram_client_api.models.MessageHandler() {
             @Override
-            public void onTextMessage(String text, Long chatId, TdApi.Message message, ClientExecutor clientExecutor, Boolean itsMe, TdApi.UpdateNewMessage update) {
+            public void onTextMessage(String text, Long chatId, TdApi.Message message, Boolean itsMe, TdApi.UpdateNewMessage update, ClientExecutor clientExecutor) {
                 for(MessageHandler messageHandler : textMessageHandlers) {
                     if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_NOT_MY && itsMe) continue;
                     if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_MY && !itsMe) continue;
@@ -42,7 +42,7 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
             }
 
             @Override
-            public void onMessage(Long chatId, TdApi.Message message, ClientExecutor clientExecutor, Boolean itsMe, TdApi.UpdateNewMessage update) {
+            public void onMessage(Long chatId, TdApi.Message message, Boolean itsMe, TdApi.UpdateNewMessage update, ClientExecutor clientExecutor) {
                 for(MessageHandler messageHandler : messageHandlers) {
                     if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_NOT_MY && itsMe) continue;
                     if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_MY && !itsMe) continue;
