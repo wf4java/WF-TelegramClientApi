@@ -1,6 +1,7 @@
 package wf.utils.telegram_client_api.spring;
 
-import it.tdlight.common.ConstructorDetector;
+
+import it.tdlight.ConstructorDetector;
 import it.tdlight.jni.TdApi;
 import lombok.*;
 import org.springframework.beans.BeansException;
@@ -70,6 +71,8 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
         if (beanClass.isAnnotationPresent(TelegramClientController.class)) {
             Method[] methods = beanClass.getDeclaredMethods();
             for (Method method : methods) {
+                method.setAccessible(true);
+
                 if (method.isAnnotationPresent(TelegramClientUpdateHandler.class))
                     updateHandlers.add(new UpdateHandler(new HandledMethod(bean, method),
                             method.getAnnotation(TelegramClientUpdateHandler.class).updateType()));

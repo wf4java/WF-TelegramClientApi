@@ -22,7 +22,7 @@ public class ClientExecutor {
 
 
     public int getChatMessagesCount(long chatId){
-        return send(new TdApi.GetChatMessageCount(chatId, new TdApi.SearchMessagesFilterEmpty(),false)).count;
+        return send(new TdApi.GetChatMessageCount(chatId, new TdApi.SearchMessagesFilterEmpty(), 0, false)).count;
     }
 
     public TdApi.Ok setReaction(long chatId, long messageId, String emoji){
@@ -81,7 +81,7 @@ public class ClientExecutor {
     public TdApi.Message sendMessageReply(Long chatId, long replyId, String text) {
         TdApi.SendMessage message = new TdApi.SendMessage();
         message.chatId = chatId;
-        message.replyToMessageId = replyId;
+        message.replyTo = new TdApi.InputMessageReplyToMessage(replyId, chatId, new TdApi.InputTextQuote());
         message.inputMessageContent = inputMessageTextFromText(text);
         return send(message);
     }
@@ -90,7 +90,7 @@ public class ClientExecutor {
     public CompletableFuture<TdApi.Message> sendMessageReplyAsync(Long chatId, long replyId, String text) {
         TdApi.SendMessage message = new TdApi.SendMessage();
         message.chatId = chatId;
-        message.replyToMessageId = replyId;
+        message.replyTo = new TdApi.InputMessageReplyToMessage(replyId, chatId, new TdApi.InputTextQuote());
         message.inputMessageContent = inputMessageTextFromText(text);
         return sendAsync(message);
     }

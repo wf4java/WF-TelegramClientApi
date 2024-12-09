@@ -1,10 +1,10 @@
 package wf.utils.telegram_client_api;
 
+import it.tdlight.ClientFactory;
+import it.tdlight.Init;
 import it.tdlight.client.*;
-import it.tdlight.common.ExceptionHandler;
-import it.tdlight.common.Init;
-import it.tdlight.common.utils.CantLoadLibrary;
 import it.tdlight.jni.TdApi;
+import it.tdlight.util.UnsupportedNativeLibraryException;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -35,6 +35,7 @@ public class TelegramClient {
     private final ClientExecutor clientExecutor;
     private final List<MessageHandler> messageHandlers;
 
+
     private TdApi.User me;
     private TdApi.AuthorizationState authorizationState;
     private SimpleAuthorizationState simpleAuthorizationState;
@@ -44,8 +45,8 @@ public class TelegramClient {
 
 
     static {
-        try { Init.start(); }
-        catch (CantLoadLibrary e) {throw new RuntimeException(e);}
+        try { Init.init(); }
+        catch (UnsupportedNativeLibraryException e) {throw new RuntimeException(e);}
     }
 
 
@@ -53,29 +54,33 @@ public class TelegramClient {
         this(createDefaultSettings(apiId, apiHash) );
     }
     public TelegramClient(TDLibSettings settings) {
-        this(settings, AuthenticationData.qrCode());
+        this(settings, AuthenticationSupplier.qrCode());
     }
 
     @SneakyThrows
-    public TelegramClient(TDLibSettings settings, AuthenticationData authenticationData) {
-        this.authWaitLatch = new CountDownLatch(1);
-        this.client = new SimpleTelegramClient(settings);
-        this.messageHandlers = new CopyOnWriteArrayList<>();
-        this.clientExecutor = new ClientExecutor(this);
-        this.executorService = new ThreadPoolExecutor(3, 25, 120, TimeUnit.SECONDS, new SynchronousQueue<>());
+    public TelegramClient(TDLibSettings settings, AuthenticationSupplier authenticationSupplier) {
+        try (SimpleTelegramClientFactory clientFactory = new SimpleTelegramClientFactory()) {
 
-        this.client.addUpdateHandler(TdApi.UpdateAuthorizationState.class, this::onUpdateAuthorizationState);
-        this.client.addUpdatesHandler(this::onUpdate);
-        this.client.addDefaultExceptionHandler(this::onException);
+            this.authWaitLatch = new CountDownLatch(1);
 
-        this.client.start(authenticationData);
+            SimpleTelegramClientBuilder builder = clientFactory.builder(settings);
+            this.messageHandlers = new CopyOnWriteArrayList<>();
+            this.clientExecutor = new ClientExecutor(this);
+            this.executorService = new ThreadPoolExecutor(3, 25, 120, TimeUnit.SECONDS, new SynchronousQueue<>());
 
-        this.authWaitLatch.await();
+            builder.addUpdateHandler(TdApi.UpdateAuthorizationState.class, this::onUpdateAuthorizationState);
+            builder.addUpdatesHandler(this::onUpdate);
+            builder.addDefaultExceptionHandler(this::onException);
 
-        if(simpleAuthorizationState != SimpleAuthorizationState.LOGGED)
-            throw new RuntimeException("Failed to connect/login to Telegram!");
+            this.client = builder.build(authenticationSupplier);
 
-        this.loadMe();
+            this.authWaitLatch.await();
+
+            if (simpleAuthorizationState != SimpleAuthorizationState.LOGGED)
+                throw new RuntimeException("Failed to connect/login to Telegram!");
+
+            this.loadMe();
+        }
     }
 
 
@@ -175,7 +180,7 @@ public class TelegramClient {
     }
 
     public static TdApi.InputMessageText inputMessageTextFromText(String text) {
-        return new TdApi.InputMessageText(new TdApi.FormattedText(text, new TdApi.TextEntity[0]), false, false);
+        return new TdApi.InputMessageText(new TdApi.FormattedText(text, new TdApi.TextEntity[0]), new TdApi.LinkPreviewOptions(), false);
     }
 
 }
