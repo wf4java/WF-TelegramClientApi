@@ -31,6 +31,7 @@ public class TelegramClient {
     @Getter(AccessLevel.NONE)
     private final ExecutorService executorService;
 
+    private final SimpleTelegramClientFactory clientFactory;
     private final SimpleTelegramClient client;
     private final ClientExecutor clientExecutor;
     private final List<MessageHandler> messageHandlers;
@@ -58,29 +59,29 @@ public class TelegramClient {
     }
 
     @SneakyThrows
-    public TelegramClient(TDLibSettings settings, AuthenticationSupplier authenticationSupplier) {
-        try (SimpleTelegramClientFactory clientFactory = new SimpleTelegramClientFactory()) {
+    public TelegramClient(TDLibSettings settings, AuthenticationSupplier<?> authenticationSupplier) {
+        clientFactory = new SimpleTelegramClientFactory();
 
-            this.authWaitLatch = new CountDownLatch(1);
+        this.authWaitLatch = new CountDownLatch(1);
 
-            SimpleTelegramClientBuilder builder = clientFactory.builder(settings);
-            this.messageHandlers = new CopyOnWriteArrayList<>();
-            this.clientExecutor = new ClientExecutor(this);
-            this.executorService = new ThreadPoolExecutor(3, 25, 120, TimeUnit.SECONDS, new SynchronousQueue<>());
+        SimpleTelegramClientBuilder builder = clientFactory.builder(settings);
+        this.messageHandlers = new CopyOnWriteArrayList<>();
+        this.clientExecutor = new ClientExecutor(this);
+        this.executorService = new ThreadPoolExecutor(3, 25, 120, TimeUnit.SECONDS, new SynchronousQueue<>());
 
-            builder.addUpdateHandler(TdApi.UpdateAuthorizationState.class, this::onUpdateAuthorizationState);
-            builder.addUpdatesHandler(this::onUpdate);
-            builder.addDefaultExceptionHandler(this::onException);
+        builder.addUpdateHandler(TdApi.UpdateAuthorizationState.class, this::onUpdateAuthorizationState);
+        builder.addUpdatesHandler(this::onUpdate);
+        builder.addDefaultExceptionHandler(this::onException);
 
-            this.client = builder.build(authenticationSupplier);
+        this.client = builder.build(authenticationSupplier);
 
-            this.authWaitLatch.await();
+        this.authWaitLatch.await();
 
-            if (simpleAuthorizationState != SimpleAuthorizationState.LOGGED)
-                throw new RuntimeException("Failed to connect/login to Telegram!");
+        if (simpleAuthorizationState != SimpleAuthorizationState.LOGGED)
+            throw new RuntimeException("Failed to connect/login to Telegram!");
 
-            this.loadMe();
-        }
+        this.loadMe();
+
     }
 
 
