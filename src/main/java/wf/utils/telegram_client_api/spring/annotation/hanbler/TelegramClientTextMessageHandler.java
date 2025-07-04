@@ -1,4 +1,4 @@
-package wf.utils.telegram_client_api.spring.annotation;
+package wf.utils.telegram_client_api.spring.annotation.hanbler;
 
 import wf.utils.telegram_client_api.models.SenderSelectorType;
 
@@ -14,5 +14,7 @@ import java.lang.annotation.*;
 public @interface TelegramClientTextMessageHandler {
 
     SenderSelectorType selectorType() default SenderSelectorType.ALL;
+
+    String group() default "default";
 
 }

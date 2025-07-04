@@ -54,6 +54,7 @@ public class TelegramClient {
     public TelegramClient(int apiId, String apiHash) {
         this(createDefaultSettings(apiId, apiHash) );
     }
+
     public TelegramClient(TDLibSettings settings) {
         this(settings, AuthenticationSupplier.qrCode());
     }
@@ -67,7 +68,7 @@ public class TelegramClient {
         SimpleTelegramClientBuilder builder = clientFactory.builder(settings);
         this.messageHandlers = new CopyOnWriteArrayList<>();
         this.clientExecutor = new ClientExecutor(this);
-        this.executorService = new ThreadPoolExecutor(3, 25, 120, TimeUnit.SECONDS, new SynchronousQueue<>());
+        this.executorService = new ThreadPoolExecutor(2, 25, 120, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
 
         builder.addUpdateHandler(TdApi.UpdateAuthorizationState.class, this::onUpdateAuthorizationState);
         builder.addUpdatesHandler(this::onUpdate);
@@ -81,7 +82,6 @@ public class TelegramClient {
             throw new RuntimeException("Failed to connect/login to Telegram!");
 
         this.loadMe();
-
     }
 
 

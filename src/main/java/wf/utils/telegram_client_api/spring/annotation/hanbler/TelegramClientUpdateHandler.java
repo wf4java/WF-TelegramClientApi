@@ -1,4 +1,4 @@
-package wf.utils.telegram_client_api.spring.annotation;
+package wf.utils.telegram_client_api.spring.annotation.hanbler;
 
 import it.tdlight.jni.TdApi;
 
@@ -13,5 +13,6 @@ public @interface TelegramClientUpdateHandler {
 
     Class<? extends TdApi.Update> updateType() default TdApi.Update.class;
 
+    String group() default "default";
 
 }

@@ -39,3 +39,4 @@ build/
 
 ### Mac OS ###
 .DS_Store
+/src/test/java/Test2.java

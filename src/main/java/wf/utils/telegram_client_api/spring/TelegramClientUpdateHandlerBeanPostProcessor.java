@@ -9,8 +9,12 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Lazy;
 import wf.utils.telegram_client_api.TelegramClient;
 import wf.utils.telegram_client_api.models.ClientExecutor;
+import wf.utils.telegram_client_api.models.MessageHandler;
 import wf.utils.telegram_client_api.models.SenderSelectorType;
 import wf.utils.telegram_client_api.spring.annotation.*;
+import wf.utils.telegram_client_api.spring.annotation.hanbler.TelegramClientMessageHandler;
+import wf.utils.telegram_client_api.spring.annotation.hanbler.TelegramClientTextMessageHandler;
+import wf.utils.telegram_client_api.spring.annotation.hanbler.TelegramClientUpdateHandler;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -22,6 +26,7 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
 
 
     private final TelegramClient telegramClient;
+    private final String group;
 
     private final ArrayList<UpdateHandler> updateHandlers = new ArrayList<>(4);
     private final ArrayList<MessageHandler> messageHandlers = new ArrayList<>(4);
@@ -30,11 +35,19 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
 
     @Lazy
     public TelegramClientUpdateHandlerBeanPostProcessor(TelegramClient telegramClient) {
+        this(telegramClient, "default");
+    }
+
+
+    @Lazy
+    public TelegramClientUpdateHandlerBeanPostProcessor(TelegramClient telegramClient, String group) {
         this.telegramClient = telegramClient;
+        this.group = group;
+
         telegramClient.addMessageHandler(new wf.utils.telegram_client_api.models.MessageHandler() {
             @Override
             public void onTextMessage(String text, Long chatId, TdApi.Message message, Boolean itsMe, TdApi.UpdateNewMessage update, ClientExecutor clientExecutor) {
-                for(MessageHandler messageHandler : textMessageHandlers) {
+                for(TelegramClientUpdateHandlerBeanPostProcessor.MessageHandler messageHandler : textMessageHandlers) {
                     if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_NOT_MY && itsMe) continue;
                     if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_MY && !itsMe) continue;
 
@@ -44,7 +57,7 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
 
             @Override
             public void onMessage(Long chatId, TdApi.Message message, Boolean itsMe, TdApi.UpdateNewMessage update, ClientExecutor clientExecutor) {
-                for(MessageHandler messageHandler : messageHandlers) {
+                for(TelegramClientUpdateHandlerBeanPostProcessor.MessageHandler messageHandler : messageHandlers) {
                     if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_NOT_MY && itsMe) continue;
                     if(messageHandler.getSenderSelectorType() == SenderSelectorType.ONLY_MY && !itsMe) continue;
 
@@ -73,15 +86,15 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
             for (Method method : methods) {
                 method.setAccessible(true);
 
-                if (method.isAnnotationPresent(TelegramClientUpdateHandler.class))
+                if (method.isAnnotationPresent(TelegramClientUpdateHandler.class) && method.getAnnotation(TelegramClientUpdateHandler.class).group().equals(group))
                     updateHandlers.add(new UpdateHandler(new HandledMethod(bean, method),
                             method.getAnnotation(TelegramClientUpdateHandler.class).updateType()));
 
-                if (method.isAnnotationPresent(TelegramClientMessageHandler.class))
+                if (method.isAnnotationPresent(TelegramClientMessageHandler.class) && method.getAnnotation(TelegramClientMessageHandler.class).group().equals(group))
                     messageHandlers.add(new MessageHandler(new HandledMethod(bean, method),
                             method.getAnnotation(TelegramClientMessageHandler.class).selectorType()));
 
-                if (method.isAnnotationPresent(TelegramClientTextMessageHandler.class))
+                if (method.isAnnotationPresent(TelegramClientTextMessageHandler.class) && method.getAnnotation(TelegramClientTextMessageHandler.class).group().equals(group))
                     textMessageHandlers.add(new MessageHandler(new HandledMethod(bean, method),
                             method.getAnnotation(TelegramClientTextMessageHandler.class).selectorType()));
             }
