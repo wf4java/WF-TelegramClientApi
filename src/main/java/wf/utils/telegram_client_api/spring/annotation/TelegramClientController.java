@@ -11,4 +11,6 @@ import java.lang.annotation.*;
 @Component
 public @interface TelegramClientController {
 
+    String group() default "default";
+
 }

@@ -83,18 +83,20 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
         Class<?> beanClass = bean.getClass();
         if (beanClass.isAnnotationPresent(TelegramClientController.class)) {
             Method[] methods = beanClass.getDeclaredMethods();
+            String controllerGroup = beanClass.getAnnotation(TelegramClientController.class).group();
+
             for (Method method : methods) {
                 method.setAccessible(true);
 
-                if (method.isAnnotationPresent(TelegramClientUpdateHandler.class) && method.getAnnotation(TelegramClientUpdateHandler.class).group().equals(group))
+                if (method.isAnnotationPresent(TelegramClientUpdateHandler.class) && groupEquals(method.getAnnotation(TelegramClientUpdateHandler.class).group(), controllerGroup))
                     updateHandlers.add(new UpdateHandler(new HandledMethod(bean, method),
                             method.getAnnotation(TelegramClientUpdateHandler.class).updateType()));
 
-                if (method.isAnnotationPresent(TelegramClientMessageHandler.class) && method.getAnnotation(TelegramClientMessageHandler.class).group().equals(group))
+                if (method.isAnnotationPresent(TelegramClientMessageHandler.class) && groupEquals(method.getAnnotation(TelegramClientMessageHandler.class).group(), controllerGroup))
                     messageHandlers.add(new MessageHandler(new HandledMethod(bean, method),
                             method.getAnnotation(TelegramClientMessageHandler.class).selectorType()));
 
-                if (method.isAnnotationPresent(TelegramClientTextMessageHandler.class) && method.getAnnotation(TelegramClientTextMessageHandler.class).group().equals(group))
+                if (method.isAnnotationPresent(TelegramClientTextMessageHandler.class) && groupEquals(method.getAnnotation(TelegramClientTextMessageHandler.class).group(), controllerGroup))
                     textMessageHandlers.add(new MessageHandler(new HandledMethod(bean, method),
                             method.getAnnotation(TelegramClientTextMessageHandler.class).selectorType()));
             }
@@ -103,6 +105,11 @@ public class TelegramClientUpdateHandlerBeanPostProcessor implements BeanPostPro
     }
 
 
+    private boolean groupEquals(String controllerGroup, String handlerGroup) {
+        return (handlerGroup.equals("default") && controllerGroup.equals(this.group))
+                || handlerGroup.equals(this.group)
+                || controllerGroup.equals(this.group);
+    }
 
     private static void invoke(HandledMethod handledMethod, Object... objects) {
         Class<?>[] parameterTypes = handledMethod.getMethod().getParameterTypes();
